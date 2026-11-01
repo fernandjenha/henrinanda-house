@@ -94,6 +94,8 @@ renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 box_.appendChild(renderer.domElement);
 const scene=new THREE.Scene();
 const cam=new THREE.PerspectiveCamera(30,1,0.1,200);
+const tgt=new THREE.Vector3(1.78,1,8.8);
+let az=0.7,el=0.85,dist=34;
 scene.add(new THREE.HemisphereLight(0xffffff,0xb8b5ad,0.85));
 const sun=new THREE.DirectionalLight(0xffffff,0.55);sun.position.set(-8,20,6);scene.add(sun);
 const wallMat=new THREE.MeshLambertMaterial({color:0xf2f1ed});
@@ -465,8 +467,6 @@ document.getElementById('importFile').onchange=async e=>{
 renderPresets();
 
 // câmera orbital
-const tgt=new THREE.Vector3(1.78,1,8.8);
-let az=0.7,el=0.85,dist=34;
 function upd(){
   cam.position.set(tgt.x+dist*Math.cos(el)*Math.sin(az),tgt.y+dist*Math.sin(el),tgt.z+dist*Math.cos(el)*Math.cos(az));
   cam.lookAt(tgt);if(window.__measReady)scaleMeas();renderer.render(scene,cam);
