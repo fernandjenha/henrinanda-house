@@ -31,7 +31,7 @@ button{background:var(--btn);color:var(--fg);border:1px solid var(--bd);border-r
 .editor input[type=color]{width:48px;height:38px;padding:2px;border:1px solid var(--bd);border-radius:7px;background:var(--btn);cursor:pointer}
 .editor input[type=text]{width:108px;padding:9px;border:1px solid var(--bd);border-radius:7px;background:var(--bg);color:var(--fg);font:13px monospace}
 .editor .selected{font-size:13px;font-weight:600;min-width:150px;color:var(--fg)}
-.editor .hint{font-size:12px;color:var(--mut);flex-basis:100%}
+.editor select{padding:9px;border:1px solid var(--bd);border-radius:7px;background:var(--bg);color:var(--fg);font-size:13px}.editor input[type=range]{width:180px}.editor .splitrow{flex-basis:100%;display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;border-top:1px solid var(--bd);padding-top:10px}.editor .hint{font-size:12px;color:var(--mut);flex-basis:100%}
 button:disabled{opacity:.45;cursor:not-allowed}
 .workspace{display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:12px;padding:0 16px 16px;align-items:start}
 .workspace #c{height:72vh;border:1px solid var(--bd);border-radius:12px;overflow:hidden;background:var(--btn)}
@@ -54,7 +54,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 </head>
 <body>
 <header><h1>Maquete 3D da casa (sem telhado)</h1>
-<p>Arraste para girar, role ou use os botões para aproximar. Medidas internas, paredes de 0,15 m, pé-direito de 3,00 m.</p></header>
+<p>Arraste para girar, role ou use os botões para aproximar. Medidas internas, paredes de 0,15 m, pé-direito de 2,70 m.</p></header>
 <div class="bar"><button id="iso">Isométrica</button><button id="top">Vista superior</button><button id="zi">Aproximar</button><button id="zo">Afastar</button><label class="tog"><input type="checkbox" id="measRooms"> Medidas dos cômodos</label><label class="tog"><input type="checkbox" id="measFurn"> Medidas dos móveis</label><label class="tog"><input type="checkbox" id="measGaps"> Folgas até as paredes</label></div>
 <div class="editor">
   <div class="selected" id="selectedWall">Nenhuma face selecionada</div>
@@ -66,13 +66,25 @@ button:disabled{opacity:.45;cursor:not-allowed}
   </label>
   <button id="resetWall" disabled>Restaurar parede</button>
   <button id="resetAll">Restaurar todas</button>
-  <div class="hint">Clique na face desejada: cada cômodo e cada lado da divisória podem receber cores diferentes. As cores ficam salvas neste navegador.</div>
+  <div class="splitrow">
+    <label class="field">Dividir esta face em duas cores
+      <select id="splitMode" disabled><option value="">Cor única</option><option value="h">Cima e baixo</option><option value="v">Lado a lado</option></select>
+    </label>
+    <label class="field">Segunda cor
+      <input id="splitColor" type="color" value="#7a8f9c" disabled>
+    </label>
+    <label class="field">Posição da divisão <span id="splitPosTxt"></span>
+      <input id="splitPos" type="range" min="0" max="100" value="50" step="1" disabled>
+    </label>
+    <label class="tog"><input type="checkbox" id="splitSwap" disabled> Inverter as cores</label>
+  </div>
+  <div class="hint">Clique na face desejada: cada cômodo e cada lado da divisória podem receber cores diferentes. As cores ficam salvas neste navegador. Para pintar metade da parede, escolha uma face e use "Dividir esta face".</div>
 </div>
 <div class="workspace"><div id="c"></div><aside class="sidebar">
 <section class="panel"><h2>Ambientes</h2><p>O cômodo é recortado da casa, sem paredes dos ambientes vizinhos. Arraste com o botão esquerdo para girar; com o direito ou Shift + arrastar para deslocar. Use a roda para zoom.</p><div id="roomButtons" class="room-buttons"></div><div id="roomInfo" class="room-info"></div></section>
 <section class="panel"><h2>Nuvem (salvamento automático)</h2><p id="cloudStatus">Carregando...</p><div id="cloudLogin" style="display:none"><input id="cloudEmail" type="email" placeholder="E-mail" autocomplete="username"><input id="cloudPass" type="password" placeholder="Senha" autocomplete="current-password"><div class="mini-actions"><button id="cloudLoginBtn">Entrar</button></div></div><div id="cloudOut" class="mini-actions" style="display:none"><button id="cloudLogoutBtn">Sair da nuvem</button></div></section>
 <section class="panel"><h2>Salvar e abrir projeto</h2><p>Salve tudo em um arquivo: cores, pisos, móveis, posições, pins, filtros e a vista atual. Depois é só abrir o arquivo para voltar exatamente ao mesmo ambiente.</p><input id="projName" type="text" maxlength="60" placeholder="Nome do projeto (ex.: Sala versão 1)"><div class="mini-actions"><button id="projSave">Salvar projeto</button><button id="projOpen">Abrir projeto</button><input type="file" id="projFile" accept="application/json,.json" hidden></div></section>
-<section class="panel"><h2>Móveis</h2><p>Importe o arquivo de um móvel (.json), adicione à maquete, arraste pelo piso, gire de 90 em 90 graus (botões ou tecla R) e fixe com o pin. Móvel fixo não se move até ser solto.</p><div class="mini-actions"><button id="furnImport">Importar móvel</button><button id="furnExample">Baixar exemplo</button><input type="file" id="furnFile" accept="application/json,.json" multiple hidden></div><h3 class="sub">Biblioteca</h3><div id="furnLib"></div><h3 class="sub">Na maquete</h3><div id="furnPlaced"></div></section>
+<section class="panel"><h2>Móveis</h2><p>Importe o arquivo de um móvel (.json), adicione à maquete, arraste pelo piso, gire de 90 em 90 graus (botões ou tecla R) e fixe com o pin. Móvel fixo não se move até ser solto. Itens de parede (quadros, pôsteres, pegboard, painel de TV) grudam na parede ao arrastar e têm um campo para a altura do chão.</p><div class="mini-actions"><button id="furnImport">Importar móvel</button><button id="furnExample">Baixar exemplo</button><input type="file" id="furnFile" accept="application/json,.json" multiple hidden></div><h3 class="sub">Biblioteca</h3><div id="furnLib"></div><h3 class="sub">Na maquete</h3><div id="furnPlaced"></div></section>
 <section class="panel"><h2>Visibilidade das paredes</h2><p>O olho oculta a parede inteira. Clique no nome para selecionar uma face e pintar.</p>
 <div class="mini-actions"><button id="showAll">Mostrar todas</button><button id="hideAll">Ocultar todas</button></div><div id="wallList" class="wall-list"></div></section>
 <section class="panel"><h2>Pisos da casa</h2><p>Medidas provisórias: altere o tamanho das placas quando souber. Os pisos são simulados com cores e rejuntes inspirados nas fotos, não são reproduções fotográficas exatas.</p>
@@ -86,7 +98,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 <script>if(!window.THREE){document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"><\/script>');}</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.104.0/dist/umd/supabase.js"></script>
 <script>
-const H=3,D=2.1,WS=1.1,WH=2.2;
+const H=2.7,D=2.1,WS=1.1,WH=2.2;
 const box_=document.getElementById('c');
 const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
 renderer.localClippingEnabled=true;
@@ -132,7 +144,7 @@ function wall(axis,a0,a1,c0,c1,ops,name='Parede',sideNames=['Face A','Face B']){
     mesh.position.set(side==='A'?c0-offset:c1+offset,(y0+y1)/2,(s+e)/2);
     mesh.rotation.y=side==='A'?-Math.PI/2:Math.PI/2;
    }
-   mesh.userData.wallId=id;mesh.userData.wallName=name+' | '+sideNames[side==='A'?0:1];
+   mesh.userData.wallId=id;mesh.userData.wallName=name+' | '+sideNames[side==='A'?0:1];mesh.userData.axis=axis;mesh.userData.run=[a0,a1];
    if(!wallMeshes.has(id))wallMeshes.set(id,[]);
    wallMeshes.get(id).push(mesh);wallGroups.get(wallId).push(mesh);scene.add(mesh);
   }
@@ -223,8 +235,8 @@ renderFloorControls();
 // paredes externas
 wall('x',0,3.55,0,0.15,[[0.85,2.35,0,D]],'Parede externa da entrada');
 wall('x',0,3.55,17.44,17.59,[],'Parede externa dos fundos');
-wall('z',0,3.75,0,0.15,[],'Lateral esquerda - suíte',['Exterior','Interior']);
-wall('z',3.75,8.47,0,0.15,[[4.03,5.43,WS,WH],[6.60,7.70,WS,WH]],'Lateral esquerda - escritório',['Exterior','Interior']);
+wall('z',0,3.75,0,0.15,[[0.15,1.10,0,D]],'Lateral esquerda - suíte',['Exterior','Interior']);
+wall('z',3.75,8.47,0,0.15,[[3.85,5.02,WS,WH],[6.20,7.40,WS,WH]],'Lateral esquerda - escritório',['Exterior','Interior']);
 wall('z',8.47,10.77,0,0.15,[],'Lateral esquerda - banheiro',['Exterior','Interior']);
 wall('z',10.77,14.54,0,0.15,[[11.95,13.35,WS,WH]],'Lateral esquerda - sala',['Exterior','Interior']);
 wall('z',14.54,17.59,0,0.15,[[15.55,16.35,0,D]],'Lateral esquerda - cozinha',['Exterior','Interior']);
@@ -318,6 +330,7 @@ function applyRoomVisibility(){
  labelMeshes.forEach((o,i)=>o.visible=!room||roomSpecs.findIndex(r=>r.id===room.id)===i);
  backgroundObjects.forEach(o=>o.visible=!room);
  if(window.__furnReady)furnRefresh();
+ if(window.__splitReady)refreshSplits(true);
  renderWallList();upd();
 }
 function setRoom(id){
@@ -538,23 +551,29 @@ function buildMesh(def){
 }
 function fmt(n){return n.toFixed(2).replace('.',',');}
 function fit(it,x,z){
+ if(it.def.montagem==='parede'){it.x=x;it.z=z;return;}
  const odd=it.rot%2===1,hw=(odd?it.def.profundidade:it.def.largura)/2,hd=(odd?it.def.largura:it.def.profundidade)/2,sn=v=>Math.round(v*20)/20;
  it.x=Math.min(3.40-hw,Math.max(0.15+hw,sn(x)));it.z=Math.min(17.44-hd,Math.max(0.15+hd,sn(z)));
 }
 function pose(it){
- it.mesh.position.set(it.x,0,it.z);it.mesh.rotation.y=it.rot*Math.PI/2;
+ it.mesh.position.set(it.x,it.def.montagem==='parede'?(it.h||0):0,it.z);it.mesh.rotation.y=it.rot*Math.PI/2;
  it.mesh.userData.pin.visible=it.pinned;it.mesh.userData.outline.visible=it.uid===selUid;
  if(window.__measReady)scheduleMeas();
 }
-function saveFurn(){try{localStorage.setItem(furnKey,JSON.stringify({library,placed:placed.map(i=>({def:i.def,x:i.x,z:i.z,rot:i.rot,pinned:i.pinned}))}));}catch(e){}}
-function addInstance(def,x,z,rot,pinned){
+function saveFurn(){try{localStorage.setItem(furnKey,JSON.stringify({library,placed:placed.map(i=>({def:i.def,x:i.x,z:i.z,rot:i.rot,pinned:i.pinned,h:i.h}))}));}catch(e){}}
+function addInstance(def,x,z,rot,pinned,h){
  const it={uid:++uidSeq,def,rot:rot||0,pinned:!!pinned,x:0,z:0,mesh:buildMesh(def)};
  const r=activeRoom?roomSpecs.find(v=>v.id===activeRoom):null;
- fit(it,x!==undefined?x:(r?(r.x0+r.x1)/2:1.78),z!==undefined?z:(r?(r.z0+r.z1)/2:12.6));
+ if(def.montagem==='parede'){
+  it.h=Number.isFinite(h)?h:(Number.isFinite(def.alturaChao)?def.alturaChao:1.2);
+  it.h=Math.max(0,Math.min(H-def.altura,it.h));
+  if(x===undefined){const rr=r||roomSpecs.find(v=>v.id==='sala');it.rot=0;x=(rr.x0+rr.x1)/2;z=rr.z0+def.profundidade/2;}
+ }else if(x===undefined){x=r?(r.x0+r.x1)/2:1.78;z=r?(r.z0+r.z1)/2:12.6;}
+ fit(it,x,z);
  furnGroup.add(it.mesh);placed.push(it);pose(it);return it;
 }
 function selectFurn(uid){selUid=uid;placed.forEach(pose);renderFurn();upd();}
-function rotateFurn(uid,d){const it=placed.find(i=>i.uid===uid);if(!it)return;it.rot=(it.rot+d+4)%4;fit(it,it.x,it.z);pose(it);saveFurn();upd();}
+function rotateFurn(uid,d){const it=placed.find(i=>i.uid===uid);if(!it||it.def.montagem==='parede')return;it.rot=(it.rot+d+4)%4;fit(it,it.x,it.z);pose(it);saveFurn();upd();}
 function pinFurn(uid){const it=placed.find(i=>i.uid===uid);if(!it)return;it.pinned=!it.pinned;pose(it);saveFurn();renderFurn();upd();}
 function removeFurn(uid){const k=placed.findIndex(i=>i.uid===uid);if(k<0)return;furnGroup.remove(placed[k].mesh);placed.splice(k,1);if(selUid===uid)selUid=null;saveFurn();renderFurn();upd();if(window.__measReady)scheduleMeas();}
 function furnPointerDown(e){
@@ -567,11 +586,13 @@ function furnPointerDown(e){
  const it=placed.find(p=>{let o=h.object;while(o){if(o===p.mesh)return true;o=o.parent;}return false;});
  if(!it)return false;
  selectFurn(it.uid);if(it.pinned)return false;
+ if(it.def.montagem==='parede'){furnDrag={it,wall:true};cv0.setPointerCapture(e.pointerId);return true;}
  const pt=new THREE.Vector3();if(!raycaster.ray.intersectPlane(floorPlane,pt))return false;
  furnDrag={it,dx:it.x-pt.x,dz:it.z-pt.z};cv0.setPointerCapture(e.pointerId);return true;
 }
 function furnPointerMove(e){
  if(!furnDrag)return false;
+ if(furnDrag.wall){moveWallItem(e);return true;}
  const rect=cv0.getBoundingClientRect();
  pointer.set(((e.clientX-rect.left)/rect.width)*2-1,-((e.clientY-rect.top)/rect.height)*2+1);
  raycaster.setFromCamera(pointer,cam);
@@ -597,7 +618,7 @@ function renderFurn(){
  placed.forEach(it=>{
   const row=document.createElement('div');row.className='furn-row'+(it.uid===selUid?' sel':'');
   const s=document.createElement('span');s.textContent=it.def.nome+(it.pinned?' (fixo)':'');s.style.cursor='pointer';s.onclick=()=>selectFurn(it.uid);
-  row.append(s,mkBtn('↺',()=>rotateFurn(it.uid,1),'Girar 90 graus (tecla R)'),mkBtn('↻',()=>rotateFurn(it.uid,-1),'Girar 90 graus no outro sentido'),
+  row.append(s,...rotOrHeight(it),
    mkBtn(it.pinned?'📍 Soltar':'📌 Fixar',()=>pinFurn(it.uid),it.pinned?'Soltar para mover':'Fixar neste local'),mkBtn('✕',()=>removeFurn(it.uid),'Remover da maquete'));
   pl.append(row);
  });
@@ -622,7 +643,7 @@ document.getElementById('furnFile').onchange=async e=>{
 addEventListener('keydown',e=>{if((e.key==='r'||e.key==='R')&&selUid&&!/INPUT|TEXTAREA/.test(document.activeElement.tagName))rotateFurn(selUid,1);});
 try{
  const sv=JSON.parse(localStorage.getItem(furnKey)||'null');
- if(sv){library=(sv.library||[]).filter(validDef);(sv.placed||[]).filter(p=>validDef(p.def)).forEach(p=>addInstance(p.def,p.x,p.z,Number(p.rot)||0,p.pinned));}
+ if(sv){library=(sv.library||[]).filter(validDef);(sv.placed||[]).filter(p=>validDef(p.def)).forEach(p=>addInstance(p.def,p.x,p.z,Number(p.rot)||0,p.pinned,p.h));}
 }catch(e){}
 // ===== Medidas visíveis =====
 const measKey='maqueteCasa_medidas_v1';
@@ -665,6 +686,7 @@ function rebuildMeasures(){
  placed.forEach(it=>{
   if(!it.mesh.visible)return;
   const odd=it.rot%2===1,hx=(odd?it.def.profundidade:it.def.largura)/2,hz=(odd?it.def.largura:it.def.profundidade)/2;
+  if(it.def.montagem==='parede'){wallMeasures(it,odd,hx,hz);return;}
   if(measOpt.furn){
    const O='#e8590c',zf=it.z+hz+0.12,xf=it.x+hx+0.12;
    mLine(it.x-hx,zf,it.x+hx,zf,O,0.03);mLine(xf,it.z-hz,xf,it.z+hz,O,0.03);
@@ -685,11 +707,146 @@ function rebuildMeasures(){
  const el=document.getElementById(id);el.checked=!!measOpt[k];
  el.onchange=()=>{measOpt[k]=el.checked;try{localStorage.setItem(measKey,JSON.stringify(measOpt));}catch(e){}scheduleMeas();};
 });
+// ===== Itens de parede (quadros, pôsteres, pegboard, painel de TV) =====
+function moveWallItem(e){
+ const it=furnDrag.it,d=it.def;
+ const rect=cv0.getBoundingClientRect();
+ pointer.set(((e.clientX-rect.left)/rect.width)*2-1,-((e.clientY-rect.top)/rect.height)*2+1);
+ raycaster.setFromCamera(pointer,cam);
+ const objs=[];wallMeshes.forEach(ms=>ms.forEach(m=>{if(m.visible)objs.push(m);}));
+ const h=raycaster.intersectObjects(objs,false)[0];if(!h||!h.face)return;
+ const n=h.face.normal.clone().transformDirection(h.object.matrixWorld);
+ if(n.dot(raycaster.ray.direction)>0)n.negate();
+ if(Math.abs(n.y)>0.5)return;
+ const rot=((Math.round(Math.atan2(n.x,n.z)/(Math.PI/2))%4)+4)%4;
+ const fx=[0,1,0,-1][rot],fz=[1,0,-1,0][rot],sn=v=>Math.round(v*20)/20,k=d.profundidade/2-0.002;
+ it.rot=rot;
+ it.x=fx!==0?h.point.x+fx*k:sn(h.point.x);
+ it.z=fz!==0?h.point.z+fz*k:sn(h.point.z);
+ it.h=Math.max(0,Math.min(H-d.altura,sn(h.point.y-d.altura/2)));
+ pose(it);upd();
+}
+function rotOrHeight(it){
+ if(it.def.montagem==='parede'){
+  const w=document.createElement('label');w.style.cssText='display:flex;align-items:center;gap:4px;font-size:12px';w.append('Chão (cm)');
+  const inp=document.createElement('input');inp.type='number';inp.min='0';inp.max=String(Math.max(0,Math.round((H-it.def.altura)*100)));inp.step='1';inp.value=String(Math.round((it.h||0)*100));
+  inp.style.cssText='width:64px;padding:4px;border:1px solid var(--bd);border-radius:6px;background:var(--bg);color:var(--fg)';
+  inp.onchange=()=>{const v=Number(inp.value);if(!Number.isFinite(v))return;it.h=Math.max(0,Math.min(H-it.def.altura,v/100));pose(it);saveFurn();renderFurn();upd();};
+  w.append(inp);return [w];
+ }
+ return [mkBtn('↺',()=>rotateFurn(it.uid,1),'Girar 90 graus (tecla R)'),mkBtn('↻',()=>rotateFurn(it.uid,-1),'Girar 90 graus no outro sentido')];
+}
+function mLineV(x,z,y1,y2,color){
+ const g=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x,y1,z),new THREE.Vector3(x,y2,z)]);
+ const l=new THREE.Line(g,new THREE.LineBasicMaterial({color,depthTest:false}));l.renderOrder=29;measGroup.add(l);
+}
+function wallMeasures(it,odd,hx,hz){
+ const d=it.def,O='#e8590c',G='#2f9e44',fx=[0,1,0,-1][it.rot],fz=[1,0,-1,0][it.rot];
+ const px=it.x+fx*0.04,pz=it.z+fz*0.04,top=it.h+d.altura,ym=it.h+d.altura/2;
+ if(measOpt.furn){
+  mLineV(px,pz,0.03,it.h,O);
+  mLabel('L '+fmt(d.largura)+' x A '+fmt(d.altura)+' m',O,px,top+0.15,pz);
+  mLabel('Chão '+fmt(it.h)+' m',O,px,Math.max(it.h/2,0.12),pz);
+ }
+ if(measOpt.gaps){
+  const qx=it.x+fx*0.2,qz=it.z+fz*0.2;
+  const r=roomSpecs.find(v=>qx>=v.x0&&qx<=v.x1&&qz>=v.z0&&qz<=v.z1);
+  if(H-top>=0.005){mLineV(px,pz,top,H,G);mLabel(fmt(H-top)+' m',G,px,(top+H)/2,pz);}
+  if(r){
+   if(odd){[[r.z0,it.z-hz],[it.z+hz,r.z1]].forEach(([s,e])=>{if(e-s>=0.005){mLine(px,s,px,e,G,ym);mLabel(fmt(e-s)+' m',G,px,ym+0.05,(s+e)/2);}});}
+   else{[[r.x0,it.x-hx],[it.x+hx,r.x1]].forEach(([s,e])=>{if(e-s>=0.005){mLine(s,pz,e,pz,G,ym);mLabel(fmt(e-s)+' m',G,(s+e)/2,ym+0.05,pz);}});}
+  }
+ }
+}
+
+// ===== Paredes em duas cores =====
+const splitKey='maqueteCasa_divisoes_v1';
+const splitCfg=new Map();
+const splitU=new WeakMap();
+const splitModeEl=document.getElementById('splitMode'),splitColorEl=document.getElementById('splitColor'),splitPosEl=document.getElementById('splitPos'),splitSwapEl=document.getElementById('splitSwap'),splitPosTxt=document.getElementById('splitPosTxt');
+function validSplit(id,c){return wallMeshes.has(id)&&c&&(c.mode==='h'||c.mode==='v')&&Number.isFinite(c.pos)&&hexOk(c.color2);}
+try{(JSON.parse(localStorage.getItem(splitKey)||'[]')).forEach(([id,c])=>{if(validSplit(id,c))splitCfg.set(id,{mode:c.mode,pos:c.pos,color2:c.color2,swap:!!c.swap});});}catch(e){}
+function saveSplits(){try{localStorage.setItem(splitKey,JSON.stringify([...splitCfg]));}catch(e){}}
+function patchSplit(mat){
+ if(!mat||splitU.has(mat))return;
+ const u={uMode:{value:0},uPos:{value:0},uAxis:{value:0},uColor2:{value:new THREE.Color('#ffffff')},uSwap:{value:0}};
+ splitU.set(mat,u);
+ mat.onBeforeCompile=sh=>{
+  Object.assign(sh.uniforms,u);
+  sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vWPos;').replace('#include <begin_vertex>','#include <begin_vertex>\nvWPos=(modelMatrix*vec4(transformed,1.0)).xyz;');
+  sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vWPos;\nuniform float uMode;uniform float uPos;uniform float uAxis;uniform vec3 uColor2;uniform float uSwap;').replace('vec4 diffuseColor = vec4( diffuse, opacity );','vec4 diffuseColor = vec4( diffuse, opacity );\nif(uMode>0.5){float c=uMode<1.5?vWPos.y:(uAxis<0.5?vWPos.x:vWPos.z);bool second=c>uPos;if(uSwap>0.5)second=!second;if(second)diffuseColor.rgb=uColor2;}');
+ };
+ mat.needsUpdate=true;
+}
+function refreshSplits(noRender){
+ wallMeshes.forEach((meshes,id)=>{
+  const cfg=splitCfg.get(id);
+  meshes.forEach(mesh=>{
+   [mesh.material,originalMaterials.get(mesh)].forEach(mat=>{
+    if(!mat)return;
+    if(!cfg&&!splitU.has(mat))return;
+    patchSplit(mat);
+    const u=splitU.get(mat);
+    u.uMode.value=cfg?(cfg.mode==='h'?1:2):0;
+    u.uPos.value=cfg?cfg.pos:0;
+    u.uAxis.value=mesh.userData.axis==='x'?0:1;
+    u.uColor2.value.set(cfg?cfg.color2:'#ffffff');
+    u.uSwap.value=(cfg&&cfg.swap)?1:0;
+   });
+  });
+ });
+ syncSplitUI();
+ if(!noRender)upd();
+}
+function vRange(id){
+ const m=wallMeshes.get(id)[0].userData,run=m.run||[0,1];let lo=run[0],hi=run[1];
+ if(activeRoom){const r=roomSpecs.find(v=>v.id===activeRoom);const l2=m.axis==='x'?r.x0:r.z0,h2=m.axis==='x'?r.x1:r.z1;const a=Math.max(lo,l2),b=Math.min(hi,h2);if(b-a>0.1){lo=a;hi=b;}}
+ return [lo,hi];
+}
+function splitText(){
+ const mode=splitModeEl.value;
+ if(!mode||!selectedWallId){splitPosTxt.textContent='';return;}
+ const pct=Number(splitPosEl.value)/100;
+ if(mode==='h')splitPosTxt.textContent='('+fmt(pct*H)+' m de altura)';
+ else{const [lo,hi]=vRange(selectedWallId);splitPosTxt.textContent='('+fmt(pct*(hi-lo))+' m do início)';}
+}
+function syncSplitUI(){
+ const on=!!selectedWallId;
+ [splitModeEl,splitColorEl,splitPosEl,splitSwapEl].forEach(e=>{e.disabled=!on;});
+ if(!on){splitPosTxt.textContent='';return;}
+ const c=splitCfg.get(selectedWallId);
+ splitModeEl.value=c?c.mode:'';
+ if(c){
+  splitColorEl.value=c.color2;splitSwapEl.checked=!!c.swap;
+  let pct;if(c.mode==='h')pct=c.pos/H*100;else{const [lo,hi]=vRange(selectedWallId);pct=(c.pos-lo)/(hi-lo)*100;}
+  splitPosEl.value=Math.max(0,Math.min(100,Math.round(pct)));
+ }
+ splitText();
+}
+function applySplit(){
+ const id=selectedWallId;if(!id)return;
+ const mode=splitModeEl.value;
+ if(!mode){splitCfg.delete(id);}
+ else{
+  const pct=Number(splitPosEl.value)/100;
+  let pos;if(mode==='h')pos=pct*H;else{const [lo,hi]=vRange(id);pos=lo+pct*(hi-lo);}
+  splitCfg.set(id,{mode,pos:Math.round(pos*1000)/1000,color2:splitColorEl.value,swap:splitSwapEl.checked});
+ }
+ saveSplits();refreshSplits();
+}
+splitModeEl.onchange=()=>{splitPosEl.value=50;applySplit();};
+splitColorEl.oninput=applySplit;splitPosEl.oninput=applySplit;splitSwapEl.onchange=applySplit;
+const _selectWall=selectWall;
+selectWall=function(m){_selectWall(m);syncSplitUI();};
+resetWallBtn.addEventListener('click',()=>{if(selectedWallId){splitCfg.delete(selectedWallId);saveSplits();refreshSplits();}});
+document.getElementById('resetAll').addEventListener('click',()=>{splitCfg.clear();saveSplits();refreshSplits();});
+window.__splitReady=true;refreshSplits(true);
+
 // ===== Salvar e abrir projeto =====
 function slug(s){return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')||'projeto';}
 function saveProject(){
  const nome=document.getElementById('projName').value.trim()||'Meu projeto';
- const data={formato:'projeto-maquete-v1',nome,salvoEm:new Date().toISOString(),colors:captureColors(),floors:floorSettings.map(f=>({...f})),hiddenWalls:hiddenWalls.slice(),library,placed:placed.map(i=>({def:i.def,x:i.x,z:i.z,rot:i.rot,pinned:i.pinned})),medidas:{...measOpt},room:activeRoom,camera:{az,el,dist,tgt:[tgt.x,tgt.y,tgt.z]}};
+ const data={formato:'projeto-maquete-v1',nome,salvoEm:new Date().toISOString(),colors:captureColors(),floors:floorSettings.map(f=>({...f})),hiddenWalls:hiddenWalls.slice(),library,placed:placed.map(i=>({def:i.def,x:i.x,z:i.z,rot:i.rot,pinned:i.pinned,h:i.h})),medidas:{...measOpt},room:activeRoom,camera:{az,el,dist,tgt:[tgt.x,tgt.y,tgt.z]},splits:[...splitCfg]};
  download(slug(nome)+'-'+data.salvoEm.slice(0,10)+'.json',data);
 }
 function applyProject(d){
@@ -697,9 +854,10 @@ function applyProject(d){
  if(Array.isArray(d.floors)&&d.floors.length===3){floorSettings=floorDefaults.map((x,i)=>({...x,...d.floors[i]}));renderFloorControls();applyFloorSettings();}
  if(validColors(d.colors))wallMeshes.forEach((m,id)=>setWallColor(id,d.colors[id]||'#F2F1ED'));
  hiddenWalls=(Array.isArray(d.hiddenWalls)?d.hiddenWalls:[]).filter(id=>wallGroups.has(id));persistJSON(visibilityKey,hiddenWalls);
+ splitCfg.clear();(Array.isArray(d.splits)?d.splits:[]).forEach(e=>{if(Array.isArray(e)&&validSplit(e[0],e[1]))splitCfg.set(e[0],{mode:e[1].mode,pos:e[1].pos,color2:e[1].color2,swap:!!e[1].swap});});saveSplits();refreshSplits(true);
  placed.forEach(i=>furnGroup.remove(i.mesh));placed=[];selUid=null;
  library=(Array.isArray(d.library)?d.library:[]).filter(validDef);
- (Array.isArray(d.placed)?d.placed:[]).filter(p=>p&&validDef(p.def)&&Number.isFinite(p.x)&&Number.isFinite(p.z)).forEach(p=>addInstance(p.def,p.x,p.z,Number(p.rot)||0,p.pinned));
+ (Array.isArray(d.placed)?d.placed:[]).filter(p=>p&&validDef(p.def)&&Number.isFinite(p.x)&&Number.isFinite(p.z)).forEach(p=>addInstance(p.def,p.x,p.z,Number(p.rot)||0,p.pinned,p.h));
  saveFurn();renderFurn();
  if(d.medidas&&typeof d.medidas==='object'){
   ['rooms','furn','gaps'].forEach(k=>{if(typeof d.medidas[k]==='boolean')measOpt[k]=d.medidas[k];});
@@ -736,7 +894,7 @@ const cEl=id=>document.getElementById(id);
 function cStatus(t){cEl('cloudStatus').textContent=t;}
 function cloudUI(){const cfg=!!cloud.sb,on=!!cloud.user;cEl('cloudLogin').style.display=cfg&&!on?'block':'none';cEl('cloudOut').style.display=cfg&&on?'flex':'none';}
 function buildProject(nome){
- return {formato:'projeto-maquete-v1',nome:nome||cEl('projName').value.trim()||'Meu projeto',salvoEm:new Date().toISOString(),colors:captureColors(),floors:floorSettings.map(f=>({...f})),hiddenWalls:hiddenWalls.slice(),library,placed:placed.map(i=>({def:i.def,x:i.x,z:i.z,rot:i.rot,pinned:i.pinned})),medidas:{...measOpt},room:activeRoom,camera:{az,el,dist,tgt:[tgt.x,tgt.y,tgt.z]}};
+ return {formato:'projeto-maquete-v1',nome:nome||cEl('projName').value.trim()||'Meu projeto',salvoEm:new Date().toISOString(),colors:captureColors(),floors:floorSettings.map(f=>({...f})),hiddenWalls:hiddenWalls.slice(),library,placed:placed.map(i=>({def:i.def,x:i.x,z:i.z,rot:i.rot,pinned:i.pinned,h:i.h})),medidas:{...measOpt},room:activeRoom,camera:{az,el,dist,tgt:[tgt.x,tgt.y,tgt.z]},splits:[...splitCfg]};
 }
 function sigNow(){const d=buildProject();d.camera=null;d.salvoEm=null;return JSON.stringify(d);}
 async function cloudSession(s){
